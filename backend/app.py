@@ -1,10 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from model import predict_url
+from backend.model import predict_url
 
 app = Flask(__name__)
-CORS(app)
 
+# Allow Chrome extension
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Handle preflight request (VERY IMPORTANT)
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
@@ -15,13 +18,14 @@ def handle_preflight():
         return response
 
 @app.route("/check", methods=["POST"])
-def check_url():
-    data = request.json
-    url = data["url"]
+def predict():
+    data = request.get_json()
+    url = data.get("url")
+
     prediction, confidence = predict_url(url)
 
     return jsonify({
-        "result": "phishing" if prediction == 1 else "legitimate",
+        "result": "phishing" if prediction == 1 else "safe",
         "confidence": confidence
     })
 
